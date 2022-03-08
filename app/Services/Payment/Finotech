@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Services\Payment;
+
+use Exception;
+use Illuminate\Support\Facades\Http;
+
+class Finotech implements IPayment
+{
+    private $base_url;
+    private $api_token;
+
+    public function __construct()
+    {
+        $this->base_url = 'https://apibeta.finnotech.ir';
+        $this->api_token = 'test_api_token';
+    }
+
+    public function transfer(
+        $client_id,
+        $track_id,
+        $amount,
+        $description,
+        $destinationFirstname,
+        $destinationLastname,
+        $destinationNumber,
+        $paymentNumber,
+        $deposit,
+        $sourceFirstName,
+        $sourceLastName,
+        $reasonDescription
+    ) {
+        $url = $this->base_url . "/oak/v2/clients/{$client_id}/transferTo?trackId={$track_id}";
+
+        try {
+            $response = Http::timeout(config('ex_services.finotech_apis_time_out'))
+
+                ->withHeaders([
+                    'Content-Type: application/json',
+                    "Authorization : Bearer {$this->api_token}"
+                ])
+
+                ->withBody(
+                    json_encode(
+                        [
+                            "amount" => $amount,
+                            "description" => $description,
+                            "destinationFirstname" => $destinationFirstname,
+                            "destinationLastname" => $destinationLastname,
+                            "destinationNumber" => $destinationNumber,
+                            "paymentNumber" => $paymentNumber,
+                            "deposit" => $deposit,
+                            "sourceFirstName" => $sourceFirstName,
+                            "sourceLastName" => $sourceLastName,
+                            "reasonDescription" => $reasonDescription
+                        ]
+                    ),
+                    'application/json; charset=utf-8'
+                )
+
+                ->post($url);
+
+            return $response;
+        } catch (Exception $exception) {
+            return $exception;
+        }
+    }
+}
